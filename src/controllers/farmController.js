@@ -127,7 +127,7 @@ const calculateFarmArea = (boundary) => {
     hectares: Number(hectares.toFixed(2)),
 
     squareMeters: Number(squareMeters.toFixed(2)),
-    
+
   };
 };
 
@@ -619,3 +619,4 @@ module.exports = {
   updateFarm,
   deleteFarm,
 };
+
