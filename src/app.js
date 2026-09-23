@@ -1,13 +1,21 @@
 const express = require('express');
+
 const cors = require('cors');
 
 const authRoutes = require('./routes/authRoutes');
+
 const userRoutes = require('./routes/userRoutes');
+
 const farmRecordRoutes = require('./routes/farmRecordRoutes');
+
+const farmRoutes = require('./routes/farmRoutes');
+
 const healthRoutes = require('./routes/healthRoutes');
+
 const weatherRoutes = require('./routes/weatherRoutes');
 
 const notFound = require('./middleware/notFound');
+
 const errorHandler = require('./middleware/errorHandler');
 
 const app = express();
@@ -59,6 +67,12 @@ app.use('/api/users', userRoutes);
 app.use('/api/farm-records', farmRecordRoutes);
 
 // ==========================================
+// FARMS
+// ==========================================
+
+app.use('/api/farms', farmRoutes);
+
+// ==========================================
 // WEATHER
 // ==========================================
 
@@ -67,12 +81,12 @@ app.use(
   weatherRoutes,
 );
 
-
 // ==========================================
 // ERROR HANDLING
 // ==========================================
 
 app.use(notFound);
+
 app.use(errorHandler);
 
 module.exports = app;
