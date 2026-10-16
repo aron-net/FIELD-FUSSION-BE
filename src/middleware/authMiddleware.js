@@ -1,6 +1,8 @@
 const jwt = require('jsonwebtoken');
+const mongoose = require('mongoose');
+const User = require('../models/User');
 
-const authenticate = (req, res, next) => {
+const authenticate = async (req, res, next) => {
   try {
     const authorization = req.headers.authorization;
 
@@ -20,18 +22,47 @@ const authenticate = (req, res, next) => {
       });
     }
 
-    const decoded = jwt.verify(
-      token,
-      process.env.JWT_SECRET,
-    );
+    let decoded;
+
+    try {
+      decoded = jwt.verify(token, process.env.JWT_SECRET);
+    } catch {
+      return res.status(401).json({
+        success: false,
+        message: 'Invalid or expired session.',
+      });
+    }
+
+    if (
+      typeof decoded.id !== 'string' ||
+      !mongoose.Types.ObjectId.isValid(decoded.id)
+    ) {
+      return res.status(401).json({
+        success: false,
+        message: 'Invalid or expired session.',
+      });
+    }
+
+    const activeUser = await User.exists({
+      _id: decoded.id,
+      isActive: true,
+    });
+
+    if (!activeUser) {
+      return res.status(401).json({
+        success: false,
+        message: 'Invalid or expired session.',
+      });
+    }
 
     req.userId = decoded.id;
-
-    next();
+    return next();
   } catch (error) {
-    return res.status(401).json({
+    console.error('Authentication check failed:', error);
+
+    return res.status(503).json({
       success: false,
-      message: 'Invalid or expired session.',
+      message: 'Authentication service is temporarily unavailable.',
     });
   }
 };

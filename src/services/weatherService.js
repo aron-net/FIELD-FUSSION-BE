@@ -315,12 +315,11 @@ const fetchFromOpenMeteo = async (
     longitude,
   );
 
-  console.log(
-    `Weather provider request: ${url.toString()}`,
-  );
-
   const response = await fetch(
     url.toString(),
+    {
+      signal: AbortSignal.timeout(10_000),
+    },
   );
 
   if (!response.ok) {
