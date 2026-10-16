@@ -14,6 +14,8 @@ const healthRoutes = require('./routes/healthRoutes');
 
 const weatherRoutes = require('./routes/weatherRoutes');
 
+const aiRoutes = require('./routes/aiRoutes');
+
 const notFound = require('./middleware/notFound');
 
 const errorHandler = require('./middleware/errorHandler');
@@ -99,6 +101,8 @@ app.use(
   '/api/weather',
   weatherRoutes,
 );
+
+app.use('/api/ai', aiRoutes);
 
 // ==========================================
 // ERROR HANDLING
