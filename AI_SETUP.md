@@ -7,6 +7,11 @@ to `gemini-2.5-flash`). Free-tier quotas, regions, and availability are
 controlled by Google and can change. The backend returns a retryable error when
 the provider quota is reached.
 
+If a Gemini request fails, check the Render service logs for `Gemini request
+failed`. The log includes the HTTP status and a bounded provider error message;
+the configured API key is redacted. The app also shows a specific hint when
+Gemini rejects the key or model. Never share the API key when reporting errors.
+
 Copy the variables from `.env.example` for local development. In production,
 add `GEMINI_API_KEY` and (optionally) `GEMINI_MODEL` to the backend host's secret
 environment and redeploy. Do not commit `.env` or put the Gemini key in a
