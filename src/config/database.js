@@ -8,7 +8,11 @@ const connectDatabase = async () => {
   }
 
   try {
-    await mongoose.connect(mongoUri);
+    await mongoose.connect(mongoUri, {
+      serverSelectionTimeoutMS: 10_000,
+      maxPoolSize: 20,
+      minPoolSize: 0,
+    });
 
     console.log('========================================');
     console.log('        EZYFARM DATABASE');
@@ -16,6 +20,10 @@ const connectDatabase = async () => {
     console.log('Status: Connected');
     console.log(`Database: ${mongoose.connection.name}`);
     console.log('========================================');
+
+    mongoose.connection.on('disconnected', () => {
+      console.error('MongoDB connection was lost.');
+    });
   } catch (error) {
     console.error(
       'MongoDB connection failed:',

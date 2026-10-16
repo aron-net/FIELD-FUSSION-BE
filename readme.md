@@ -1970,6 +1970,29 @@ Production:
 API_BASE_URL=https://api.ezyfarm.com
 ```
 
+## Backend production configuration
+
+Copy `.env.example` to `.env` for local deployment configuration, then provide
+the production values through the hosting platform's secret/environment
+configuration. Never commit `.env` or reuse a development JWT secret.
+
+The backend requires Node.js 20 or newer, `MONGO_URI`, and a unique
+`JWT_SECRET` of at least 32 characters (generate one with
+`openssl rand -base64 48`). Set `CORS_ORIGINS` to the exact
+comma-separated web origins that may call the API; native clients without an
+`Origin` header remain supported. Configure HTTPS at the hosting platform or
+reverse proxy. Apply distributed rate limiting at the proxy/API gateway for
+authentication and weather endpoints before exposing the service publicly.
+
+PIN recovery cannot be enabled in production until an SMS delivery provider is
+integrated. Only development mode returns the generated OTP in the response
+for testing; other environments return `503` instead of logging an OTP or
+claiming it was sent.
+
+Install reproducibly with `pnpm install --frozen-lockfile` or `npm ci`, and
+start with `pnpm start` or `npm start`. Run the built-in test suite with
+`pnpm test` or `npm test`.
+
 Weather:
 
 ```env

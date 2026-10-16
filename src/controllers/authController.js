@@ -154,10 +154,6 @@ const register = async (req, res) => {
         const token =
             generateToken(user._id);
 
-        console.log(
-            `Auth: New farmer registered ${normalizedPhone}`,
-        );
-
         return successResponse(
             res,
             201,
@@ -260,10 +256,6 @@ const login = async (req, res) => {
         const token =
             generateToken(user._id);
 
-        console.log(
-            `Auth: Farmer login ${normalizedPhone}`,
-        );
-
         return successResponse(
             res,
             200,
@@ -294,6 +286,14 @@ const login = async (req, res) => {
 
 const forgotPin = async (req, res) => {
     try {
+        if (process.env.NODE_ENV !== 'development') {
+            return errorResponse(
+                res,
+                503,
+                'PIN recovery is temporarily unavailable.',
+            );
+        }
+
         const { phoneNumber } = req.body;
 
         if (!phoneNumber) {
@@ -329,22 +329,10 @@ const forgotPin = async (req, res) => {
 
         const now = new Date();
 
-        console.log('DEBUG resetPinOtpLastSentAt:', user.resetPinOtpLastSentAt);
-        console.log('DEBUG now:', now);
-
-        console.log(
-            'DEBUG elapsed:',
-            user.resetPinOtpLastSentAt
-                ? now - user.resetPinOtpLastSentAt
-                : null,
-        );
-
         if (
             user.resetPinOtpLastSentAt &&
             now - user.resetPinOtpLastSentAt < 60 * 1000
         ) {
-            console.log('DEBUG: OTP cooldown BLOCKED request');
-
             return errorResponse(
                 res,
                 429,
@@ -371,14 +359,13 @@ const forgotPin = async (req, res) => {
 
         await user.save();
 
-        console.log(
-            `Reset PIN OTP for ${normalizedPhone}: ${otp}`,
-        );
-
         return successResponse(
             res,
             200,
-            'OTP sent successfully.',
+            'Development OTP generated.',
+            {
+                otp,
+            },
         );
     } catch (error) {
         console.error(

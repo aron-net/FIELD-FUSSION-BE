@@ -25,6 +25,49 @@ const syncRecords = async (req, res) => {
       );
     }
 
+    if (records.length > 500) {
+      return errorResponse(
+        res,
+        400,
+        'A maximum of 500 records can be synchronized at once.',
+      );
+    }
+
+    const hasInvalidRecord = records.some(record => (
+      !record ||
+      typeof record !== 'object' ||
+      Array.isArray(record) ||
+      typeof record.offlineId !== 'string' ||
+      !record.offlineId.trim() ||
+      record.offlineId.length > 200 ||
+      typeof record.cropType !== 'string' ||
+      !record.cropType.trim() ||
+      record.cropType.length > 100 ||
+      typeof record.activity !== 'string' ||
+      !record.activity.trim() ||
+      record.activity.length > 100 ||
+      typeof record.quantity !== 'number' ||
+      !Number.isFinite(record.quantity) ||
+      record.quantity < 0 ||
+      typeof record.timestamp !== 'string' ||
+      !Number.isFinite(Date.parse(record.timestamp)) ||
+      (
+        record.unit !== undefined &&
+        (
+          typeof record.unit !== 'string' ||
+          record.unit.length > 30
+        )
+      )
+    ));
+
+    if (hasInvalidRecord) {
+      return errorResponse(
+        res,
+        400,
+        'Each record must have a valid offlineId, cropType, activity, quantity, and timestamp.',
+      );
+    }
+
     const operations = records.map(record => {
       const {
         offlineId,
@@ -49,7 +92,9 @@ const syncRecords = async (req, res) => {
               cropType,
               activity,
               quantity,
-              unit: unit || 'kg',
+              unit: typeof unit === 'string' && unit.trim()
+                ? unit.trim()
+                : 'kg',
               timestamp,
               syncedAt: new Date(),
             },
