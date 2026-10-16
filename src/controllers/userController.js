@@ -11,6 +11,19 @@ const {
   errorResponse,
 } = require('../utils/apiResponse');
 
+const sanitizeUser = user => ({
+  id: user._id,
+  phoneNumber: user.phoneNumber,
+  firstName: user.firstName,
+  lastName: user.lastName,
+  email: user.email,
+  role: user.role,
+  isActive: user.isActive,
+  metadata: user.metadata,
+  createdAt: user.createdAt,
+  updatedAt: user.updatedAt,
+});
+
 // ==========================================
 // GET CURRENT USER
 // GET /api/users/me
@@ -18,7 +31,9 @@ const {
 
 const getCurrentUser = async (req, res) => {
   try {
-    const user = await User.findById(req.userId);
+    const user = await User.findById(req.userId).select(
+      'phoneNumber firstName lastName email role isActive metadata createdAt updatedAt',
+    );
 
     if (!user) {
       return errorResponse(
@@ -33,7 +48,7 @@ const getCurrentUser = async (req, res) => {
       200,
       'User profile retrieved successfully.',
       {
-        user,
+        user: sanitizeUser(user),
       },
     );
   } catch (error) {
@@ -65,6 +80,14 @@ const updateCurrentUser = async (req, res) => {
       pin,
       metadata,
     } = req.body;
+
+    if (Object.keys(req.body || {}).length === 0) {
+      return errorResponse(
+        res,
+        400,
+        'No update data provided.',
+      );
+    }
 
     const user = await User.findById(req.userId);
 
@@ -107,9 +130,28 @@ const updateCurrentUser = async (req, res) => {
     }
 
     if (email !== undefined) {
-      updateFields.email = email
-        ? String(email).trim().toLowerCase()
-        : null;
+      if (email !== null && typeof email !== 'string') {
+        return errorResponse(
+          res,
+          400,
+          'Email must be a valid email address.',
+        );
+      }
+
+      const cleanEmail = email ? email.trim().toLowerCase() : '';
+
+      if (
+        cleanEmail &&
+        !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(cleanEmail)
+      ) {
+        return errorResponse(
+          res,
+          400,
+          'Email must be a valid email address.',
+        );
+      }
+
+      updateFields.email = cleanEmail || null;
     }
 
     if (phoneNumber !== undefined) {
@@ -158,7 +200,27 @@ const updateCurrentUser = async (req, res) => {
     }
 
     if (metadata !== undefined) {
+      if (
+        metadata === null ||
+        typeof metadata !== 'object' ||
+        Array.isArray(metadata)
+      ) {
+        return errorResponse(
+          res,
+          400,
+          'Metadata must be an object.',
+        );
+      }
+
       updateFields.metadata = metadata;
+    }
+
+    if (Object.keys(updateFields).length === 0) {
+      return errorResponse(
+        res,
+        400,
+        'No profile fields to update.',
+      );
     }
 
     const updatedUser =
@@ -178,7 +240,7 @@ const updateCurrentUser = async (req, res) => {
       200,
       'Profile updated successfully.',
       {
-        user: updatedUser,
+        user: sanitizeUser(updatedUser),
       },
     );
   } catch (error) {

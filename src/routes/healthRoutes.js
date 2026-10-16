@@ -1,14 +1,19 @@
 const express = require('express');
+const mongoose = require('mongoose');
 
 const router = express.Router();
 
 router.get('/', (req, res) => {
-  return res.status(200).json({
-    success: true,
-    message: 'EzyFarm Cloud Core operational.',
+  const isDatabaseConnected = mongoose.connection.readyState === 1;
+
+  return res.status(isDatabaseConnected ? 200 : 503).json({
+    success: isDatabaseConnected,
+    message: isDatabaseConnected
+      ? 'EzyFarm backend is ready.'
+      : 'EzyFarm backend database is unavailable.',
     data: {
       service: 'ezyfarm-backend',
-      status: 'healthy',
+      status: isDatabaseConnected ? 'healthy' : 'unavailable',
       timestamp: new Date().toISOString(),
     },
   });
