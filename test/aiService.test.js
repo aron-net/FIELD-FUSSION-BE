@@ -164,3 +164,58 @@ test("reports free-tier throttling as a retryable error", async (t) => {
     (error) => error instanceof AiProviderError && error.statusCode === 429,
   );
 });
+
+test("explains Gemini API-key rejection and redacts the key from logs", async (t) => {
+  const originalFetch = global.fetch;
+  const originalConsoleError = console.error;
+  const logged = [];
+  t.after(() => {
+    global.fetch = originalFetch;
+    console.error = originalConsoleError;
+  });
+  process.env.GEMINI_API_KEY = "secret-test-key";
+  console.error = (...args) => logged.push(args.join(" "));
+  global.fetch = async () => ({
+    ok: false,
+    status: 400,
+    json: async () => ({
+      error: {
+        status: "INVALID_ARGUMENT",
+        message: "API key not valid. secret-test-key",
+      },
+    }),
+  });
+
+  await assert.rejects(
+    chatWithAssistant({ message: "Hello", history: [] }),
+    (error) =>
+      error instanceof AiProviderError &&
+      /GEMINI_API_KEY/.test(error.message),
+  );
+  assert.match(logged.join("\n"), /INVALID_ARGUMENT/);
+  assert.doesNotMatch(logged.join("\n"), /secret-test-key/);
+});
+
+test("explains when Gemini rejects the configured model", async (t) => {
+  const originalFetch = global.fetch;
+  t.after(() => {
+    global.fetch = originalFetch;
+  });
+  global.fetch = async () => ({
+    ok: false,
+    status: 400,
+    json: async () => ({
+      error: {
+        status: "NOT_FOUND",
+        message: "Model not found: invalid-model",
+      },
+    }),
+  });
+
+  await assert.rejects(
+    chatWithAssistant({ message: "Hello", history: [] }),
+    (error) =>
+      error instanceof AiProviderError &&
+      /configured model/.test(error.message),
+  );
+});

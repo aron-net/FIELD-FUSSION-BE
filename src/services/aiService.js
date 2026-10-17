@@ -112,11 +112,49 @@ const requestGemini = async ({ systemInstruction, contents }) => {
         429,
       );
     }
-    console.error(`Gemini request failed with HTTP ${response.status}.`);
+    let providerError;
+    try {
+      providerError = (await response.json())?.error;
+    } catch {
+      providerError = undefined;
+    }
+    const providerMessage =
+      typeof providerError?.message === "string"
+        ? providerError.message.slice(0, 400).replaceAll(apiKey, "[redacted]")
+        : "No provider error detail returned.";
+    console.error(
+      "Gemini request failed:",
+      JSON.stringify({
+        httpStatus: response.status,
+        providerStatus:
+          typeof providerError?.status === "string"
+            ? providerError.status
+            : undefined,
+        providerMessage,
+      }),
+    );
+    const providerDetails =
+      `${providerError?.status || ""} ${providerMessage}`.toLowerCase();
+    if (/api.?key|credential/.test(providerDetails)) {
+      throw new AiProviderError(
+        "Gemini rejected the configured API key. Check that GEMINI_API_KEY is a valid Google AI Studio key and redeploy the backend.",
+        502,
+      );
+    }
+    if (
+      /model.{0,40}(not found|not supported|not available|invalid)|(?:not found|not supported|not available|invalid).{0,40}model/.test(
+        providerDetails,
+      )
+    ) {
+      throw new AiProviderError(
+        "Gemini rejected the configured model. Unset GEMINI_MODEL or set it to a model enabled for this API key, then redeploy.",
+        502,
+      );
+    }
     throw new AiProviderError(
       response.status >= 500
         ? "The AI service is temporarily unavailable. Please try again."
-        : "The AI request could not be processed.",
+        : "Gemini rejected the request. Check the backend service logs for its error details.",
       502,
     );
   }
