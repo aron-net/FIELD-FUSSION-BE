@@ -66,8 +66,8 @@ test("sends chat through Gemini on the server with bounded conversation history"
     })),
   });
   assert.equal(result.reply, "Check the leaves today.");
-  assert.equal(result.model, "gemini-2.5-flash");
-  assert.match(request.url, /gemini-2\.5-flash:generateContent$/);
+  assert.equal(result.model, "gemini-flash-latest");
+  assert.match(request.url, /gemini-flash-latest:generateContent$/);
   assert.equal(request.options.headers["x-goog-api-key"], "test-key");
   assert.equal(request.body.contents.length, 10);
   assert.equal(

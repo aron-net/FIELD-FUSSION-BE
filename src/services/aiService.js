@@ -1,6 +1,6 @@
 const crypto = require("node:crypto");
 
-const DEFAULT_MODEL = "gemini-2.5-flash";
+const DEFAULT_MODEL = "gemini-flash-latest";
 const MAX_OUTPUT_TOKENS = 900;
 const DAILY_ADVICE_TTL_MS = 24 * 60 * 60 * 1000;
 const dailyAdviceCache = new Map();

@@ -3,7 +3,8 @@
 The assistant uses the Gemini API through the backend. The mobile app never
 receives the Gemini API key. Create a key in Google AI Studio and configure it
 as the backend secret `GEMINI_API_KEY`; optionally set `GEMINI_MODEL` (defaults
-to `gemini-2.5-flash`). Free-tier quotas, regions, and availability are
+to `gemini-flash-latest`, which resolves to Google's current Flash model).
+Free-tier quotas, regions, and availability are
 controlled by Google and can change. The backend returns a retryable error when
 the provider quota is reached.
 
