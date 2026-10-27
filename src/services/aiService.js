@@ -1,7 +1,7 @@
 const crypto = require("node:crypto");
 
 const DEFAULT_MODEL = "gemini-flash-latest";
-const MAX_OUTPUT_TOKENS = 900;
+const MAX_OUTPUT_TOKENS = 1600;
 const DAILY_ADVICE_TTL_MS = 24 * 60 * 60 * 1000;
 const dailyAdviceCache = new Map();
 
@@ -160,13 +160,18 @@ const requestGemini = async ({ systemInstruction, contents }) => {
   }
 
   const result = await response.json();
-  const text = result?.candidates?.[0]?.content?.parts
+  const candidate = result?.candidates?.[0];
+  const answer = candidate?.content?.parts
     ?.map((part) => (typeof part.text === "string" ? part.text : ""))
     .join("")
     .trim();
-  if (!text) {
+  if (!answer) {
     throw new AiProviderError("The AI service returned an empty response.");
   }
+  const text =
+    candidate.finishReason === "MAX_TOKENS"
+      ? `${answer}\n\n_This answer may be incomplete. Ask me to continue._`
+      : answer;
   return { text, model };
 };
 
@@ -226,7 +231,7 @@ const chatWithAssistant = async ({ message, history, context }) => {
     : [];
   const { text, model } = await requestGemini({
     systemInstruction:
-      "You are the EzyFarm agricultural assistant. Help with farming in clear, practical language. You may discuss crop pests and animal health, but photos and chat are not a definitive diagnosis. Ask clarifying questions when needed. For animals with severe symptoms, recommend an in-person veterinarian promptly. Never prescribe veterinary drugs or pesticide doses. Do not invent farm, soil, or weather facts; use the supplied context only when relevant. When discussing soil, label map data as an estimate, not a field test. Keep answers concise and actionable.",
+      "You are the EzyFarm agricultural assistant. Help with farming in clear, practical language. You may discuss crop pests and animal health, but photos and chat are not a definitive diagnosis. Ask clarifying questions when needed. For animals with severe symptoms, recommend an in-person veterinarian promptly. Never prescribe veterinary drugs or pesticide doses. Do not invent farm, soil, or weather facts; use the supplied context only when relevant. When discussing soil, label map data as an estimate, not a field test. Keep answers concise and actionable, ordinarily under 250 words. Use short headings and simple bullet points when they improve readability.",
     contents: [
       {
         role: "user",
@@ -254,7 +259,7 @@ const diagnoseImage = async ({
   const subjectName = subject === "animal" ? "animal health" : "crop health";
   const { text, model } = await requestGemini({
     systemInstruction:
-      "You are an agricultural decision-support assistant for farmers in Uganda. Inspect the supplied image carefully. State what is and is not visible, give possible causes only (not a definitive diagnosis), ask for missing symptoms or history, and suggest low-risk next steps. Do not prescribe veterinary medicines, pesticide products, or application doses. For severe animal symptoms, recommend prompt in-person veterinary care. Mention image limitations and advise local expert confirmation before treatment.",
+      "You are an agricultural decision-support assistant for farmers in Uganda. Inspect the supplied image carefully. State what is and is not visible, give possible causes only (not a definitive diagnosis), ask for missing symptoms or history, and suggest low-risk next steps. Do not prescribe veterinary medicines, pesticide products, or application doses. For severe animal symptoms, recommend prompt in-person veterinary care. Mention image limitations and advise local expert confirmation before treatment. Keep the response concise, ordinarily under 250 words, and use simple headings or bullets where useful.",
     contents: [
       {
         role: "user",
