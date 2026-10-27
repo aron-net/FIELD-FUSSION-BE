@@ -66,8 +66,8 @@ test("sends chat through Gemini on the server with bounded conversation history"
     })),
   });
   assert.equal(result.reply, "Check the leaves today.");
-  assert.equal(result.model, "gemini-2.5-flash");
-  assert.match(request.url, /gemini-2\.5-flash:generateContent$/);
+  assert.equal(result.model, "gemini-flash-latest");
+  assert.match(request.url, /gemini-flash-latest:generateContent$/);
   assert.equal(request.options.headers["x-goog-api-key"], "test-key");
   assert.equal(request.body.contents.length, 10);
   assert.equal(
@@ -189,8 +189,7 @@ test("explains Gemini API-key rejection and redacts the key from logs", async (t
   await assert.rejects(
     chatWithAssistant({ message: "Hello", history: [] }),
     (error) =>
-      error instanceof AiProviderError &&
-      /GEMINI_API_KEY/.test(error.message),
+      error instanceof AiProviderError && /GEMINI_API_KEY/.test(error.message),
   );
   assert.match(logged.join("\n"), /INVALID_ARGUMENT/);
   assert.doesNotMatch(logged.join("\n"), /secret-test-key/);
@@ -218,4 +217,35 @@ test("explains when Gemini rejects the configured model", async (t) => {
       error instanceof AiProviderError &&
       /configured model/.test(error.message),
   );
+});
+
+test("marks assistant replies that Gemini stops at its token limit", async (t) => {
+  const originalFetch = global.fetch;
+  t.after(() => {
+    global.fetch = originalFetch;
+  });
+  global.fetch = async (_url, options) => {
+    assert.equal(
+      JSON.parse(options.body).generationConfig.maxOutputTokens,
+      1600,
+    );
+    return {
+      ok: true,
+      json: async () => ({
+        candidates: [
+          {
+            content: { parts: [{ text: "The answer stopped here" }] },
+            finishReason: "MAX_TOKENS",
+          },
+        ],
+      }),
+    };
+  };
+
+  const result = await chatWithAssistant({
+    message: "Tell me about maize.",
+    history: [],
+  });
+  assert.match(result.reply, /The answer stopped here/);
+  assert.match(result.reply, /may be incomplete/);
 });
