@@ -16,6 +16,12 @@ const weatherRoutes = require('./routes/weatherRoutes');
 
 const aiRoutes = require('./routes/aiRoutes');
 
+const productionRoutes = require('./routes/productionRoutes');
+
+const marketplaceRoutes = require('./routes/marketplaceRoutes');
+
+const transportRoutes = require('./routes/transportRoutes');
+
 const notFound = require('./middleware/notFound');
 
 const errorHandler = require('./middleware/errorHandler');
@@ -103,6 +109,12 @@ app.use(
 );
 
 app.use('/api/ai', aiRoutes);
+
+app.use('/api', productionRoutes);
+
+app.use('/api/marketplace', marketplaceRoutes);
+
+app.use('/api/transport', transportRoutes);
 
 // ==========================================
 // ERROR HANDLING
