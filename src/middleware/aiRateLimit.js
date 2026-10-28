@@ -1,6 +1,7 @@
 const WINDOW_MS = 60 * 60 * 1000;
 const LIMITS = {
   advice: 10,
+  ask: 10,
   chat: 30,
   diagnose: 5,
   soil: 60,

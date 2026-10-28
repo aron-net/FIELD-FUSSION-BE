@@ -1902,9 +1902,48 @@ Example API:
 /api/weather
 /api/weather/forecast
 
-/api/ai/assistant
-/api/ai/crop-analysis
-/api/ai/recommendations
+/api/ai/soil
+/api/ai/advice
+/api/ai/chat
+/api/ai/diagnose
+/api/ai/ask
+/api/ai/history
+
+AI routes require a bearer token. `/api/ai/ask` stores each consultation
+against the authenticated farmer; `/api/ai/history` returns that farmer's
+most recent consultations (50 by default, up to 100 with `?limit=`).
+
+Production and commerce routes also require a bearer token:
+
+```text
+GET|POST       /api/crops
+GET|PUT|DELETE /api/crops/:id
+GET|POST       /api/activities
+GET|POST       /api/harvests
+GET            /api/marketplace/products
+POST            /api/marketplace/products
+PUT|DELETE      /api/marketplace/products/:id
+GET|POST       /api/marketplace/orders
+GET            /api/marketplace/orders/:id
+GET            /api/transport/orders       (administrator)
+PATCH          /api/transport/orders/:id   (administrator)
+```
+
+Farm production records are scoped to their authenticated owner. Marketplace
+checkout accepts product IDs and quantities only; the backend uses current
+listing prices and stock and calculates the delivery estimate. Supported
+delivery estimates are UGX 12,000 for Boda Express, UGX 25,000 for Truck
+Freight, and UGX 5,000 for Cooperative Depot Pickup. Transport status changes
+are administrator-managed; live carrier booking, driver dispatch, and payment
+processing require external providers and are not configured here.
+
+To publish a harvested batch, send `POST /api/marketplace/products` with
+`{ "harvestId": "<owned harvest id>", "priceUGX": 24000 }`. The listing title,
+unit, crop category, and starting stock are derived from that harvest. General
+catalog listings provide `title`, `category`, `priceUGX`, `unit`, and
+`availableStock`. Checkout sends `items` as `{ "productId", "quantity" }`
+entries plus `deliveryMethod`, `deliveryAddress`, and `contactPhone`; prices
+and totals supplied by the client are not used.
 
 /api/marketplace/listings
 /api/marketplace/orders
