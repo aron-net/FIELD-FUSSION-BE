@@ -78,14 +78,47 @@ test("farm collection routes are registered and require authentication", async (
   }
 });
 
+test("crop, farm production, marketplace, and transport routes require authentication", async () => {
+  await startServer();
+
+  for (const [method, path] of [
+    ["GET", "/api/crops"],
+    ["POST", "/api/crops"],
+    ["GET", "/api/activities"],
+    ["POST", "/api/activities"],
+    ["GET", "/api/harvests"],
+    ["POST", "/api/harvests"],
+    ["GET", "/api/marketplace/products"],
+    ["POST", "/api/marketplace/products"],
+    ["GET", "/api/marketplace/orders"],
+    ["POST", "/api/marketplace/orders"],
+    ["GET", "/api/transport/orders"],
+  ]) {
+    const response = await fetch(`${baseUrl}${path}`, {
+      method,
+      headers: {
+        connection: "close",
+        ...(method === "POST" ? { "content-type": "application/json" } : {}),
+      },
+      ...(method === "POST" ? { body: "{}" } : {}),
+    });
+    const body = await response.json();
+
+    assert.equal(response.status, 401, `${method} ${path}`);
+    assert.equal(body.message, "Authentication required.");
+  }
+});
+
 test("AI assistant routes are registered and require authentication", async () => {
   await startServer();
 
   for (const [method, path] of [
     ["GET", "/api/ai/soil?latitude=2.25&longitude=32.9"],
     ["POST", "/api/ai/advice"],
+    ["POST", "/api/ai/ask"],
     ["POST", "/api/ai/chat"],
     ["POST", "/api/ai/diagnose"],
+    ["GET", "/api/ai/history"],
   ]) {
     const response = await fetch(`${baseUrl}${path}`, {
       method,
